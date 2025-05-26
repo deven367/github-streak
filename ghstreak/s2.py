@@ -163,11 +163,17 @@ class GitHubStreakTracker:
         try:
             # Search for issues created by the user
             query = f"author:{self.username} type:issue created:>={start_date.date()}"
-            issues = self.api.search.issues_and_pull_requests(query, per_page=100)
+            search_result = self.api.search.issues_and_pull_requests(query, per_page=100)
 
             count = 0
-            for issue in issues.items:
-                if not issue.pull_request:  # Make sure it's an issue, not a PR
+            # Handle different response formats
+            items = getattr(search_result, 'items', [])
+            if not items and hasattr(search_result, '__iter__'):
+                items = list(search_result)
+
+            for issue in items:
+                # Check if it has pull_request attribute to distinguish issues from PRs
+                if not hasattr(issue, 'pull_request') or not issue.pull_request:
                     created_date = datetime.fromisoformat(
                         issue.created_at.replace('Z', '+00:00')
                     ).date()
@@ -189,11 +195,17 @@ class GitHubStreakTracker:
         try:
             # Search for PRs created by the user
             query = f"author:{self.username} type:pr created:>={start_date.date()}"
-            prs = self.api.search.issues_and_pull_requests(query, per_page=100)
+            search_result = self.api.search.issues_and_pull_requests(query, per_page=100)
 
             count = 0
-            for pr in prs.items:
-                if pr.pull_request:  # Make sure it's a PR
+            # Handle different response formats
+            items = getattr(search_result, 'items', [])
+            if not items and hasattr(search_result, '__iter__'):
+                items = list(search_result)
+
+            for pr in items:
+                # Check if it has pull_request attribute and it's not None
+                if hasattr(pr, 'pull_request') and pr.pull_request:
                     created_date = datetime.fromisoformat(
                         pr.created_at.replace('Z', '+00:00')
                     ).date()
