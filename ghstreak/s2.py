@@ -161,24 +161,40 @@ class GitHubStreakTracker:
         print("🐛 Fetching issue creations...")
 
         try:
-            # Search for issues created by the user
-            query = f"author:{self.username} type:issue created:>={start_date.date()}"
-            search_result = self.api.search.issues_and_pull_requests(query, per_page=100)
-
+            # Use a simpler approach - get issues from each repository
+            repos = self.api.repos.list_for_user(self.username, per_page=100)
             count = 0
-            # Handle different response formats
-            items = getattr(search_result, 'items', [])
-            if not items and hasattr(search_result, '__iter__'):
-                items = list(search_result)
 
-            for issue in items:
-                # Check if it has pull_request attribute to distinguish issues from PRs
-                if not hasattr(issue, 'pull_request') or not issue.pull_request:
-                    created_date = datetime.fromisoformat(
-                        issue.created_at.replace('Z', '+00:00')
-                    ).date()
-                    issue_dates.add(created_date)
-                    count += 1
+            for repo in repos:
+                if repo.fork:
+                    continue
+
+                try:
+                    # Get issues from this repository
+                    issues = self.api.issues.list_for_repo(
+                        owner=self.username,
+                        repo=repo.name,
+                        creator=self.username,
+                        state='all',
+                        per_page=100
+                    )
+
+                    for issue in issues:
+                        # Skip pull requests (they show up in issues API)
+                        if hasattr(issue, 'pull_request') and issue.pull_request:
+                            continue
+
+                        created_date = datetime.fromisoformat(
+                            issue.created_at.replace('Z', '+00:00')
+                        ).date()
+
+                        if start_date.date() <= created_date <= end_date.date():
+                            issue_dates.add(created_date)
+                            count += 1
+
+                except Exception:
+                    # Skip repositories where we can't access issues
+                    continue
 
             print(f"   ✅ Found {count} issue creations")
 
@@ -193,24 +209,37 @@ class GitHubStreakTracker:
         print("🔀 Fetching pull request creations...")
 
         try:
-            # Search for PRs created by the user
-            query = f"author:{self.username} type:pr created:>={start_date.date()}"
-            search_result = self.api.search.issues_and_pull_requests(query, per_page=100)
-
+            # Get PRs from each repository
+            repos = self.api.repos.list_for_user(self.username, per_page=100)
             count = 0
-            # Handle different response formats
-            items = getattr(search_result, 'items', [])
-            if not items and hasattr(search_result, '__iter__'):
-                items = list(search_result)
 
-            for pr in items:
-                # Check if it has pull_request attribute and it's not None
-                if hasattr(pr, 'pull_request') and pr.pull_request:
-                    created_date = datetime.fromisoformat(
-                        pr.created_at.replace('Z', '+00:00')
-                    ).date()
-                    pr_dates.add(created_date)
-                    count += 1
+            for repo in repos:
+                if repo.fork:
+                    continue
+
+                try:
+                    # Get pull requests from this repository
+                    prs = self.api.pulls.list(
+                        owner=self.username,
+                        repo=repo.name,
+                        state='all',
+                        per_page=100
+                    )
+
+                    for pr in prs:
+                        # Only count PRs created by the user
+                        if pr.user.login == self.username:
+                            created_date = datetime.fromisoformat(
+                                pr.created_at.replace('Z', '+00:00')
+                            ).date()
+
+                            if start_date.date() <= created_date <= end_date.date():
+                                pr_dates.add(created_date)
+                                count += 1
+
+                except Exception:
+                    # Skip repositories where we can't access PRs
+                    continue
 
             print(f"   ✅ Found {count} pull request creations")
 
