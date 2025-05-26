@@ -34,6 +34,8 @@ class GitHubStreakTracker:
         start_date = end_date - timedelta(days=days_back)
 
         print(f"Fetching commits for {self.username}...")
+        processed_repos = 0
+        skipped_repos = 0
 
         try:
             # Get all repositories for the user
@@ -43,6 +45,12 @@ class GitHubStreakTracker:
                 try:
                     # Skip forks unless they have commits from the user
                     if repo.fork:
+                        skipped_repos += 1
+                        continue
+
+                    # Skip empty repositories
+                    if repo.size == 0:
+                        skipped_repos += 1
                         continue
 
                     # Get commits from the repository
@@ -61,15 +69,28 @@ class GitHubStreakTracker:
                         ).date()
                         commit_dates.add(commit_date)
 
+                    processed_repos += 1
+
                 except Exception as e:
-                    # Skip repositories we can't access
-                    print(f"Warning: Could not access {repo.name}: {e}")
+                    # Handle specific error cases
+                    error_msg = str(e)
+                    if "Git Repository is empty" in error_msg or "409" in error_msg:
+                        # Silently skip empty repositories
+                        skipped_repos += 1
+                    elif "404" in error_msg:
+                        # Repository not found or no access
+                        skipped_repos += 1
+                    else:
+                        # Other errors - show warning but continue
+                        print(f"Warning: Could not access {repo.name}: {e}")
+                        skipped_repos += 1
                     continue
 
         except Exception as e:
             print(f"Error fetching repositories: {e}")
             return set()
 
+        print(f"✅ Processed {processed_repos} repositories ({skipped_repos} skipped)")
         return commit_dates
 
     def calculate_streaks(self, commit_dates):
