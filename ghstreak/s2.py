@@ -7,9 +7,9 @@ A simple CLI tool to track your GitHub contribution streaks.
 import argparse
 import sys
 from datetime import datetime, timedelta
-from collections import defaultdict
 from ghapi.all import GhApi
 import os
+
 
 class GitHubStreakTracker:
     def __init__(self, token=None, username=None):
@@ -18,7 +18,10 @@ class GitHubStreakTracker:
         self.username = username
 
         if not self.token:
-            raise ValueError("GitHub token is required. Set GITHUB_TOKEN environment variable or pass it directly.")
+            raise ValueError(
+                'GitHub token is required. Set GITHUB_TOKEN environment variable'
+                'or pass it directly.'
+            )
 
         self.api = GhApi(token=self.token)
 
@@ -33,7 +36,7 @@ class GitHubStreakTracker:
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days_back)
 
-        print(f"Fetching commits for {self.username}...")
+        print(f'Fetching commits for {self.username}...')
         processed_repos = 0
         skipped_repos = 0
 
@@ -60,7 +63,7 @@ class GitHubStreakTracker:
                         author=self.username,
                         since=start_date.isoformat(),
                         until=end_date.isoformat(),
-                        per_page=100
+                        per_page=100,
                     )
 
                     for commit in commits:
@@ -74,23 +77,23 @@ class GitHubStreakTracker:
                 except Exception as e:
                     # Handle specific error cases
                     error_msg = str(e)
-                    if "Git Repository is empty" in error_msg or "409" in error_msg:
+                    if 'Git Repository is empty' in error_msg or '409' in error_msg:
                         # Silently skip empty repositories
                         skipped_repos += 1
-                    elif "404" in error_msg:
+                    elif '404' in error_msg:
                         # Repository not found or no access
                         skipped_repos += 1
                     else:
                         # Other errors - show warning but continue
-                        print(f"Warning: Could not access {repo.name}: {e}")
+                        print(f'Warning: Could not access {repo.name}: {e}')
                         skipped_repos += 1
                     continue
 
         except Exception as e:
-            print(f"Error fetching repositories: {e}")
+            print(f'Error fetching repositories: {e}')
             return set()
 
-        print(f"✅ Processed {processed_repos} repositories ({skipped_repos} skipped)")
+        print(f'✅ Processed {processed_repos} repositories ({skipped_repos} skipped)')
         return commit_dates
 
     def calculate_streaks(self, commit_dates):
@@ -118,11 +121,10 @@ class GitHubStreakTracker:
 
         # Find all streaks by grouping consecutive dates
         if sorted_dates:
-            streak_start = sorted_dates[0]
             streak_length = 1
 
             for i in range(1, len(sorted_dates)):
-                if sorted_dates[i-1] - sorted_dates[i] == timedelta(days=1):
+                if sorted_dates[i - 1] - sorted_dates[i] == timedelta(days=1):
                     streak_length += 1
                 else:
                     streaks.append(streak_length)
@@ -151,61 +153,78 @@ class GitHubStreakTracker:
 
     def display_streak_info(self):
         """Display current and previous streak information."""
-        print(f"\n🔥 GitHub Streak Information for {self.username}")
-        print("=" * 50)
+        print(f'\n🔥 GitHub Streak Information for {self.username}')
+        print('=' * 50)
 
         # Get commit dates for the last year
         commit_dates = self.get_commit_dates(days_back=365)
 
         if not commit_dates:
-            print("❌ No commits found in the last 365 days.")
+            print('❌ No commits found in the last 365 days.')
             return
 
-        current_streak, previous_streak, days_since_last = self.calculate_streaks(commit_dates)
+        current_streak, previous_streak, days_since_last = self.calculate_streaks(
+            commit_dates
+        )
 
         # Display current streak
-        print(f"\n📊 Current Streak:")
+        print('\n📊 Current Streak:')
         if current_streak > 0:
-            print(f"   🔥 {current_streak} days and counting!")
-            print(f"   💪 Keep it up!")
+            print(f'   🔥 {current_streak} days and counting!')
+            print(f'   💪 Keep it up!')
         else:
-            print(f"   💔 No current streak")
+            print('   💔 No current streak')
             if days_since_last:
-                print(f"   ⏰ Last commit was {days_since_last} days ago")
+                print(f'   ⏰ Last commit was {days_since_last} days ago')
 
         # Display previous streak
-        print(f"\n📈 Previous Best Streak:")
+        print('\n📈 Previous Best Streak:')
         if previous_streak > 0:
-            print(f"   🏆 {previous_streak} days")
+            print(f'   🏆 {previous_streak} days')
             if current_streak == 0 and days_since_last:
-                print(f"   📅 Ended {days_since_last} days ago")
+                print(f'   📅 Ended {days_since_last} days ago')
         else:
-            print(f"   📝 No previous streak found")
+            print('   📝 No previous streak found')
 
         # Display total activity
         total_active_days = len(commit_dates)
-        print(f"\n📋 Summary (Last 365 days):")
-        print(f"   📅 Total active days: {total_active_days}")
-        print(f"   📊 Activity rate: {total_active_days/365*100:.1f}%")
+        print('\n📋 Summary (Last 365 days):')
+        print(f'   📅 Total active days: {total_active_days}')
+        print(f'   📊 Activity rate: {total_active_days / 365 * 100:.1f}%')
 
         # Show recent activity
-        recent_dates = sorted([d for d in commit_dates if d >= datetime.now().date() - timedelta(days=7)], reverse=True)
+        recent_dates = sorted(
+            [d for d in commit_dates if d >= datetime.now().date() - timedelta(days=7)],
+            reverse=True,
+        )
         if recent_dates:
-            print(f"\n🗓️  Recent activity (last 7 days):")
+            print('\n🗓️  Recent activity (last 7 days):')
             for date in recent_dates:
                 days_ago = (datetime.now().date() - date).days
                 if days_ago == 0:
-                    print(f"   ✅ Today ({date})")
+                    print(f'   ✅ Today ({date})')
                 elif days_ago == 1:
-                    print(f"   ✅ Yesterday ({date})")
+                    print(f'   ✅ Yesterday ({date})')
                 else:
-                    print(f"   ✅ {days_ago} days ago ({date})")
+                    print(f'   ✅ {days_ago} days ago ({date})')
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Track your GitHub contribution streaks")
-    parser.add_argument('--token', help='GitHub personal access token (or set GITHUB_TOKEN env var)')
-    parser.add_argument('--username', help='GitHub username (defaults to authenticated user)')
-    parser.add_argument('--days', type=int, default=365, help='Number of days to look back (default: 365)')
+    parser = argparse.ArgumentParser(
+        description='Track your GitHub contribution streaks'
+    )
+    parser.add_argument(
+        '--token', help='GitHub personal access token (or set GITHUB_TOKEN env var)'
+    )
+    parser.add_argument(
+        '--username', help='GitHub username (defaults to authenticated user)'
+    )
+    parser.add_argument(
+        '--days',
+        type=int,
+        default=365,
+        help='Number of days to look back (default: 365)',
+    )
 
     args = parser.parse_args()
 
@@ -214,16 +233,19 @@ def main():
         tracker.display_streak_info()
 
     except ValueError as e:
-        print(f"❌ Error: {e}")
-        print("\n💡 To get started:")
-        print("1. Create a GitHub personal access token at: https://github.com/settings/tokens")
-        print("2. Set it as environment variable: export GITHUB_TOKEN=your_token_here")
-        print("3. Or pass it directly: python github_streak.py --token your_token_here")
+        print(f'❌ Error: {e}')
+        print('\n💡 To get started:')
+        print(
+            '1. Create a GitHub personal access token at: https://github.com/settings/tokens'
+        )
+        print('2. Set it as environment variable: export GITHUB_TOKEN=your_token_here')
+        print('3. Or pass it directly: python github_streak.py --token your_token_here')
         sys.exit(1)
 
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f'❌ Unexpected error: {e}')
         sys.exit(1)
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
