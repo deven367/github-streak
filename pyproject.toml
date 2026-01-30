@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ghstreak"
+name = "github-streak"
 version = "0.1.0"
 description = "CLI tool to track your GitHub contribution streaks"
 readme = "README.md"
