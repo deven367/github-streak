@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ghstreak"
+version = "0.1.0"
+description = "CLI tool to track your GitHub contribution streaks"
+readme = "README.md"
+authors = [{name = "Deven Mistry"}]
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "requests>=2.25.0",
+    "python-dotenv>=0.19.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/deven367/github-streak"
+Repository = "https://github.com/deven367/github-streak"
+
+[project.scripts]
+ghstreak = "ghstreak.streak:main"
