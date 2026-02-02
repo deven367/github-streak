@@ -5,7 +5,7 @@ A simple CLI tool to track your GitHub contribution streaks.
 ## Installation
 
 ```bash
-pip install ghstreak
+pip install github-streak
 ```
 
 ## Usage
