@@ -103,7 +103,10 @@ def main():
     result = analyze_streaks(data)
     print(f"Current streak: {result['current_streak']} days")
     if result['previous_streak'] > 0:
-        print(f"Previous streak: {result['previous_streak']} days, ended on {result['last_active_day']}")
+        if result['last_active_day']:
+            print(f"Previous streak: {result['previous_streak']} days, ended on {result['last_active_day']}")
+        else:
+            print(f"Previous streak: {result['previous_streak']} days")
     else:
         print("No previous streak found")
 
